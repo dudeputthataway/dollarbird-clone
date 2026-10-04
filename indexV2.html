@@ -1,0 +1,1677 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Dollarbird - Cash Flow & Forecasting PWA</title>
+  
+  <!-- PWA Manifest & App Shell Headers -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#090d16">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="Dollarbird">
+
+  <!-- iOS Safari PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Dollarbird">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          screens: {
+            'xs': '380px',
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            inflow: '#10b981',
+            outflow: '#f43f5e'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom sleek scrollbars */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    /* Mobile-optimized calendar cell heights */
+    .calendar-cell {
+      min-height: 70px;
+      transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    }
+    @media (min-width: 640px) {
+      .calendar-cell {
+        min-height: 104px;
+      }
+    }
+    .no-tap-highlight {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    /* Safe padding for notched phones */
+    .safe-top {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    .safe-bottom {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    /* Touch swipe transition animations on calendar grid */
+    .slide-left {
+      animation: slideLeftAnim 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .slide-right {
+      animation: slideRightAnim 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes slideLeftAnim {
+      from { transform: translateX(32px); opacity: 0.55; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideRightAnim {
+      from { transform: translateX(-32px); opacity: 0.55; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    /* Touch action to allow vertical scrolling while tracking horizontal gestures */
+    #calendarGridContainer {
+      touch-action: pan-y;
+      will-change: transform, opacity;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans bg-slate-950 text-slate-100 overflow-x-hidden safe-top safe-bottom">
+
+  <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-2.5 sm:px-6 py-2 flex items-center justify-between gap-1.5 sm:gap-4">
+      
+      <!-- Brand & Offline/PWA Indicator -->
+      <div class="flex items-center gap-2 min-w-0">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-sky-400 flex items-center justify-center shadow-lg shadow-indigo-500/25 ring-1 ring-white/20 flex-shrink-0">
+          <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <span class="text-sm sm:text-base font-bold tracking-tight text-white truncate">Dollarbird</span>
+            <span id="pwaBadge" class="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1 flex-shrink-0">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="pwaBadgeText" class="hidden xs:inline">Local PWA</span>
+            </span>
+          </div>
+          <p class="text-[9px] sm:text-[10px] text-slate-400 leading-none truncate hidden sm:block">Cash Flow & Calendar Budgeting</p>
+        </div>
+      </div>
+
+      <!-- Live Bank Balance Widget (Reconciliation Shortcut) -->
+      <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+        <div class="bg-slate-950/90 border border-slate-800 rounded-xl px-2 sm:px-3 py-1 flex items-center gap-1.5 sm:gap-2 shadow-inner">
+          <div class="text-right">
+            <div class="text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold text-slate-400">Live Today</div>
+            <div id="headerLiveBalance" class="text-xs sm:text-sm font-bold text-emerald-400 leading-tight">$0.00</div>
+          </div>
+          <button id="reconcileHeaderBtn" class="px-2 py-1 rounded-lg text-[9px] sm:text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="Calibrate with real bank account">
+            Reconcile
+          </button>
+        </div>
+      </div>
+
+      <!-- Actions: Install Banner, Settings/Backup, & Quick Add -->
+      <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+        <button id="installAppBtn" class="hidden items-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30 transition no-tap-highlight">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span class="hidden md:inline">Install</span>
+        </button>
+
+        <button id="openDataModalBtn" class="p-1.5 sm:p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800 transition" title="Data Backup & Storage Settings">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+
+        <button id="quickAddBtn" class="flex items-center gap-1 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 ring-1 ring-indigo-400/40 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+          <span class="hidden xs:inline">Add</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-2.5 sm:px-6 py-3 flex flex-col gap-3 sm:gap-4 pb-20">
+    
+    <!-- View Switcher & Sub-Controls -->
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <!-- Tabs: Calendar View vs Forecast Line View -->
+      <div class="inline-flex p-1 bg-slate-900 border border-slate-800 rounded-xl">
+        <button id="tabCalendarBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+          Calendar
+        </button>
+        <button id="tabForecastBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18M18 9l-5 5-4-4-6 6"/></svg>
+          Forecast & Chart
+        </button>
+      </div>
+
+      <!-- Calendar Granularity & Navigation -->
+      <div id="calendarControls" class="flex items-center gap-2">
+        <div class="inline-flex p-0.5 bg-slate-900 border border-slate-800 rounded-lg text-[11px] font-medium">
+          <button id="viewMonthBtn" class="px-2.5 py-1 rounded bg-slate-800 text-white">Month</button>
+          <button id="viewWeekBtn" class="px-2.5 py-1 rounded text-slate-400 hover:text-slate-200">Week</button>
+        </div>
+
+        <div class="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5">
+          <button id="prevPeriodBtn" class="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition" title="Previous Month (or swipe right)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <button id="todayJumpBtn" class="px-2 py-0.5 text-[11px] font-semibold text-slate-300 hover:text-white">Today</button>
+          <button id="nextPeriodBtn" class="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition" title="Next Month (or swipe left)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <section id="calendarSection" class="flex flex-col gap-3">
+      
+      <!-- Calendar Title & Month Summary Strip -->
+      <div class="flex items-center justify-between bg-slate-900/60 border border-slate-800/80 rounded-2xl px-3.5 py-2.5">
+        <div>
+          <h2 id="calendarTitle" class="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+            <span>October 2026</span>
+          </h2>
+          <!-- Subtle swipe gesture helper tip for mobile screens -->
+          <div class="flex items-center gap-1.5 text-[10px] text-slate-400">
+            <svg class="w-3 h-3 text-indigo-400/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+            <span class="hidden xs:inline">Swipe left / right to navigate months</span>
+            <span class="xs:hidden">Swipe to switch month</span>
+          </div>
+        </div>
+
+        <!-- Month Activity Summary -->
+        <div class="flex items-center gap-2 sm:gap-4 text-right">
+          <div>
+            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-medium">Inflows</div>
+            <div id="monthInflowTotal" class="text-xs sm:text-sm font-semibold text-emerald-400">+$0.00</div>
+          </div>
+          <div>
+            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-medium">Outflows</div>
+            <div id="monthOutflowTotal" class="text-xs sm:text-sm font-semibold text-rose-400">-$0.00</div>
+          </div>
+          <div class="border-l border-slate-800 pl-2 sm:pl-3">
+            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-medium">Net Diff</div>
+            <div id="monthNetTotal" class="text-xs sm:text-sm font-bold text-slate-200">$0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calendar Container with Swipe Gesture Listener -->
+      <div id="calendarContainer" class="bg-slate-900 border border-slate-800 rounded-2xl p-2 sm:p-4 shadow-xl relative overflow-hidden select-none">
+        
+        <!-- Day-of-Week Column Headers -->
+        <div class="grid grid-cols-7 gap-1 sm:gap-2 mb-1.5 text-center text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <div>Sun</div>
+          <div>Mon</div>
+          <div>Tue</div>
+          <div>Wed</div>
+          <div>Thu</div>
+          <div>Fri</div>
+          <div>Sat</div>
+        </div>
+
+        <!-- Swipeable Calendar Grid -->
+        <div id="calendarGridContainer" class="relative">
+          <div id="calendarGrid" class="grid grid-cols-7 gap-1 sm:gap-2">
+            <!-- Dynamically populated day cells -->
+          </div>
+        </div>
+
+        <!-- Swipe Feedback Overlay Toast -->
+        <div id="swipeToast" class="pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-200 opacity-0 z-20">
+          <div id="swipeToastContent" class="px-3.5 py-1.5 rounded-full bg-slate-900/95 border border-indigo-500/40 text-indigo-300 text-xs font-semibold shadow-2xl flex items-center gap-1.5 backdrop-blur-md">
+            <!-- Dynamic swipe indicator -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="forecastSection" class="hidden flex-col gap-3">
+      
+      <!-- Timeframe Selector & Forecast Controls -->
+      <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/60 border border-slate-800/80 rounded-2xl px-3.5 py-2.5">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-white tracking-tight">Cash Flow Forecast & Trajectory</h2>
+          <p class="text-[10px] sm:text-xs text-slate-400">Simulate future cash balances with scheduled recurring flows</p>
+        </div>
+
+        <!-- Timeframe Selector: 30 Days | 1 Year | 2 Years -->
+        <div class="flex items-center gap-1 p-1 bg-slate-950 border border-slate-800 rounded-xl">
+          <button id="tf30d" class="tf-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow transition" data-days="30">
+            30 Days
+          </button>
+          <button id="tf1y" class="tf-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition" data-days="365">
+            1 Year
+          </button>
+          <button id="tf2y" class="tf-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition" data-days="730">
+            2 Years
+          </button>
+        </div>
+      </div>
+
+      <!-- Forecast KPI Stat Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3">
+          <span class="text-[9px] uppercase font-semibold text-slate-400 tracking-wider">Projected Ending</span>
+          <div id="chartEndingBalance" class="text-sm sm:text-lg font-bold text-white mt-0.5">$0.00</div>
+          <div id="chartEndingDate" class="text-[10px] text-slate-400">on Target Date</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3">
+          <span class="text-[9px] uppercase font-semibold text-slate-400 tracking-wider">Lowest Cash Point</span>
+          <div id="chartLowestBalance" class="text-sm sm:text-lg font-bold text-emerald-400 mt-0.5">$0.00</div>
+          <div id="chartLowestDate" class="text-[10px] text-slate-400">Safe runway</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3">
+          <span class="text-[9px] uppercase font-semibold text-slate-400 tracking-wider">Peak Cash Level</span>
+          <div id="chartPeakBalance" class="text-sm sm:text-lg font-bold text-sky-400 mt-0.5">$0.00</div>
+          <div id="chartPeakDate" class="text-[10px] text-slate-400">Peak balance date</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3">
+          <span class="text-[9px] uppercase font-semibold text-slate-400 tracking-wider">Net Growth</span>
+          <div id="chartNetChange" class="text-sm sm:text-lg font-bold text-slate-200 mt-0.5">$0.00</div>
+          <div id="chartNetPercent" class="text-[10px] text-slate-400">Across horizon</div>
+        </div>
+      </div>
+
+      <!-- Interactive SVG Chart Container -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 sm:p-5 shadow-xl relative">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+          <div class="flex items-center gap-2">
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+            <span class="font-medium text-slate-300">Projected Daily Liquidity</span>
+          </div>
+          <div class="text-[11px] text-slate-400 flex items-center gap-2">
+            <span class="inline-block w-3 h-0.5 border-t border-dashed border-red-500/80"></span>
+            <span>$0 Break-Even</span>
+          </div>
+        </div>
+
+        <!-- SVG Line Chart Canvas -->
+        <div id="chartCanvasWrapper" class="relative w-full h-64 sm:h-80 select-none">
+          <svg id="forecastSvg" class="w-full h-full overflow-visible" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#6366f1" stop-opacity="0.35"/>
+                <stop offset="70%" stop-color="#4f46e5" stop-opacity="0.08"/>
+                <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.0"/>
+              </linearGradient>
+            </defs>
+            <!-- Chart gridlines, area fill, trajectory line, and scrubber cursor injected via JS -->
+          </svg>
+
+          <!-- Floating Interactive Scrubber Tooltip -->
+          <div id="chartTooltip" class="pointer-events-none absolute hidden top-2 bg-slate-950/95 border border-indigo-500/40 rounded-xl p-2.5 shadow-2xl text-xs z-20 backdrop-blur-md">
+            <div id="chartTooltipDate" class="text-[10px] uppercase font-semibold text-slate-400">Date</div>
+            <div id="chartTooltipBalance" class="text-sm font-bold text-white mt-0.5">$0.00</div>
+            <div id="chartTooltipActivity" class="text-[10px] text-slate-300 mt-0.5">Activity: +$0.00</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside id="dayDrawer" class="fixed inset-y-0 right-0 z-40 w-full sm:w-96 bg-slate-900 border-l border-slate-800 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+    <!-- Drawer Header -->
+    <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+      <div>
+        <h3 id="drawerDateTitle" class="text-base font-bold text-white">October 15, 2026</h3>
+        <p id="drawerDaySub" class="text-xs text-slate-400">Daily Cash Detail</p>
+      </div>
+      <button id="closeDrawerBtn" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Daily Financial Snapshot -->
+    <div class="p-4 bg-slate-950/60 border-b border-slate-800 grid grid-cols-2 gap-2 text-xs">
+      <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+        <div class="text-[9px] uppercase tracking-wider text-slate-400 font-medium">Daily Net</div>
+        <div id="drawerNetTotal" class="text-sm font-bold text-emerald-400 mt-0.5">+$0.00</div>
+      </div>
+      <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+        <div class="text-[9px] uppercase tracking-wider text-slate-400 font-medium">Closing Cash</div>
+        <div id="drawerClosingBalance" class="text-sm font-bold text-white mt-0.5">$0.00</div>
+      </div>
+    </div>
+
+    <!-- Quick Drawer Actions -->
+    <div class="p-3 border-b border-slate-800/80 flex items-center gap-2">
+      <button id="drawerAddTxBtn" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center gap-1.5 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+        Add to This Day
+      </button>
+      <button id="drawerReconcileBtn" class="py-1.5 px-2.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="Calibrate balance as of this date">
+        Set Balance
+      </button>
+    </div>
+
+    <!-- Day's Scheduled Transactions List -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-2" id="drawerTxList">
+      <!-- Populated via JS -->
+    </div>
+  </aside>
+  <div id="drawerBackdrop" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-30 hidden transition-opacity"></div>
+
+  <div id="txModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 hidden">
+    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" id="txModalBackdrop"></div>
+    <div class="relative bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl z-10 overflow-hidden">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 id="txModalTitle" class="text-base font-bold text-white">Add Transaction</h3>
+        <button id="closeTxModalBtn" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <form id="txForm" class="mt-4 space-y-3.5 text-xs">
+        <input type="hidden" id="txId" value="">
+
+        <!-- Type Selector: Expense vs Income -->
+        <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 border border-slate-800 rounded-xl">
+          <button type="button" id="txTypeExpense" class="py-2 rounded-lg font-semibold bg-rose-600 text-white transition">Expense (-)</button>
+          <button type="button" id="txTypeIncome" class="py-2 rounded-lg font-semibold text-slate-400 hover:text-white transition">Income (+)</button>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 mb-1">Description / Name</label>
+          <input type="text" id="txDescription" required placeholder="e.g. Salary, Rent, Groceries" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <!-- Amount & Date Grid -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1">Amount ($)</label>
+            <input type="number" step="0.01" min="0.01" id="txAmount" required placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-semibold focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1">Date</label>
+            <input type="date" id="txDate" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <!-- Category & Recurrence Grid -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1">Category</label>
+            <select id="txCategory" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+              <option value="General">General</option>
+              <option value="Income">Income / Salary</option>
+              <option value="Housing">Housing / Rent</option>
+              <option value="Utilities">Utilities & Bills</option>
+              <option value="Groceries">Groceries & Food</option>
+              <option value="Subscriptions">Subscriptions</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Savings">Savings / Transfer</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1">Repeat</label>
+            <select id="txRecurrence" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+              <option value="none">One-time</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="biweekly">Every 2 Weeks</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Optional Recurrence End Date -->
+        <div id="recurrenceEndContainer" class="hidden">
+          <label class="block text-[11px] font-semibold text-slate-400 mb-1">Repeat Until (Optional)</label>
+          <input type="date" id="txRecurrenceEnd" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <!-- Actions -->
+        <div class="pt-2 flex items-center justify-between gap-2">
+          <button type="button" id="deleteTxBtn" class="hidden px-3 py-2 rounded-xl text-xs font-semibold bg-rose-950 text-rose-300 border border-rose-800/80 hover:bg-rose-900 transition">
+            Delete
+          </button>
+          <div class="flex-1 flex justify-end gap-2">
+            <button type="button" id="cancelTxBtn" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Cancel</button>
+            <button type="submit" id="saveTxBtn" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition">Save Transaction</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="reconcileModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 hidden">
+    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" id="reconcileBackdrop"></div>
+    <div class="relative bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl z-10">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div>
+          <h3 class="text-base font-bold text-white">Reconcile Account Balance</h3>
+          <p class="text-[11px] text-slate-400">Match your Dollarbird projections to your real bank statement</p>
+        </div>
+        <button id="closeReconcileBtn" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-4 text-xs">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 mb-1">Effective Date</label>
+          <div class="flex items-center gap-2">
+            <input type="date" id="reconcileDate" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+            <button type="button" id="reconcileSetTodayBtn" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-300 font-semibold hover:bg-slate-700">Today</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 mb-1">Actual Bank Account Balance ($)</label>
+          <input type="number" step="0.01" id="reconcileAmount" placeholder="e.g. 3520.40" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-lg font-bold text-emerald-400 focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <!-- Reconciliation Method Selection -->
+        <div class="bg-slate-950/70 border border-slate-800/80 rounded-xl p-3 space-y-2">
+          <span class="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Calibration Method</span>
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input type="radio" name="reconcileMethod" value="anchor" checked class="mt-0.5 text-indigo-600 focus:ring-0">
+            <div>
+              <span class="font-semibold text-white">Anchor as New Baseline</span>
+              <p class="text-[10px] text-slate-400 leading-snug">Calibrates the starting balance on this date forward. Cleanest for new setups.</p>
+            </div>
+          </label>
+
+          <label class="flex items-start gap-2.5 cursor-pointer pt-1 border-t border-slate-800/50">
+            <input type="radio" name="reconcileMethod" value="adjustment" class="mt-0.5 text-indigo-600 focus:ring-0">
+            <div>
+              <span class="font-semibold text-white">Create Balancing Entry</span>
+              <p class="text-[10px] text-slate-400 leading-snug">Calculates variance against current projections and logs an automated adjusting transaction.</p>
+            </div>
+          </label>
+        </div>
+
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" id="cancelReconcileBtn" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">Cancel</button>
+          <button type="button" id="confirmReconcileBtn" class="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30">Apply Balance</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="dataModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 hidden">
+    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" id="dataModalBackdrop"></div>
+    <div class="relative bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl z-10 text-xs">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div>
+          <h3 class="text-base font-bold text-white">Data Storage & Backup</h3>
+          <p class="text-[11px] text-slate-400">Offline namespaced storage & file snapshots</p>
+        </div>
+        <button id="closeDataModalCloseBtn" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-4">
+        <!-- Local Storage Info Pill -->
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-slate-300">Local Persistence</span>
+            <span class="text-[10px] text-emerald-400 font-medium">Namespaced & Sandboxed</span>
+          </div>
+          <p class="text-[10px] text-slate-400">Data is isolated to <code class="text-indigo-400 font-mono">dollarbird_*</code> keys to guarantee zero conflicts with other apps on your phone or computer.</p>
+        </div>
+
+        <!-- Export / Import Snapshot Actions -->
+        <div class="space-y-2">
+          <label class="block text-[11px] font-semibold text-slate-300">JSON Data Snapshot</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="exportJsonBtn" class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold flex items-center justify-center gap-1.5 border border-slate-700 transition">
+              <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Export JSON
+            </button>
+            <label class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold flex items-center justify-center gap-1.5 border border-slate-700 cursor-pointer transition">
+              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"/></svg>
+              Import JSON
+              <input type="file" id="importJsonInput" accept=".json" class="hidden">
+            </label>
+          </div>
+        </div>
+
+        <!-- Demo Data & Reset Actions -->
+        <div class="pt-2 border-t border-slate-800 flex items-center justify-between">
+          <button id="loadDemoDataBtn" class="text-xs text-indigo-400 hover:text-indigo-300 underline font-medium">Load Sample Data</button>
+          <button id="clearAllDataBtn" class="text-xs text-rose-400 hover:text-rose-300 underline font-medium">Reset All Data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* NAMESPACED STORAGE KEYS (Guarantees zero origin conflicts) */
+    const STORAGE_KEY_TXS = 'dollarbird_transactions';
+    const STORAGE_KEY_SETTINGS = 'dollarbird_settings';
+
+    // Application state
+    let state = {
+      currentDate: new Date(), // Selected/viewed calendar cursor
+      selectedDayStr: formatDateISO(new Date()),
+      viewMode: 'month', // 'month' or 'week'
+      activeTab: 'calendar', // 'calendar' or 'forecast'
+      forecastDays: 30,
+      baselineBalance: 3250.00,
+      baselineDate: formatDateISO(new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
+      transactions: [],
+      dailyCalculations: {}
+    };
+
+    /* Utility: format date to YYYY-MM-DD */
+    function formatDateISO(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    /* Utility: parse YYYY-MM-DD into Date object without timezone shift */
+    function parseDateISO(str) {
+      const parts = str.split('-');
+      return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    }
+
+    /* Currency Formatter */
+    function formatCurrency(amount, withPlus = false) {
+      const isNeg = amount < 0;
+      const absVal = Math.abs(amount).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+      if (isNeg) return `-$${absVal}`;
+      if (withPlus && amount > 0) return `+$${absVal}`;
+      return `$${absVal}`;
+    }
+
+    function loadPersistedData() {
+      try {
+        const storedSettings = localStorage.getItem(STORAGE_KEY_SETTINGS);
+        if (storedSettings) {
+          const parsed = JSON.parse(storedSettings);
+          if (parsed.baselineBalance !== undefined) state.baselineBalance = Number(parsed.baselineBalance);
+          if (parsed.baselineDate) state.baselineDate = parsed.baselineDate;
+          if (parsed.forecastDays) state.forecastDays = Number(parsed.forecastDays);
+        }
+
+        const storedTxs = localStorage.getItem(STORAGE_KEY_TXS);
+        if (storedTxs) {
+          state.transactions = JSON.parse(storedTxs);
+        } else {
+          populateDefaultSeedData();
+        }
+      } catch (err) {
+        console.error('Error loading stored data:', err);
+        populateDefaultSeedData();
+      }
+    }
+
+    function savePersistedData() {
+      try {
+        localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify({
+          baselineBalance: state.baselineBalance,
+          baselineDate: state.baselineDate,
+          forecastDays: state.forecastDays
+        }));
+        localStorage.setItem(STORAGE_KEY_TXS, JSON.stringify(state.transactions));
+      } catch (err) {
+        console.error('Error saving data:', err);
+      }
+    }
+
+    function populateDefaultSeedData() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = now.getMonth();
+
+      state.baselineBalance = 3450.00;
+      state.baselineDate = formatDateISO(new Date(y, m, 1));
+      
+      state.transactions = [
+        {
+          id: 'seed-salary',
+          description: 'Payroll Direct Deposit',
+          amount: 2400.00,
+          type: 'income',
+          category: 'Income',
+          date: formatDateISO(new Date(y, m, 1)),
+          recurrence: 'biweekly',
+          recurrenceEnd: ''
+        },
+        {
+          id: 'seed-rent',
+          description: 'Apartment Lease',
+          amount: 1450.00,
+          type: 'expense',
+          category: 'Housing',
+          date: formatDateISO(new Date(y, m, 1)),
+          recurrence: 'monthly',
+          recurrenceEnd: ''
+        },
+        {
+          id: 'seed-groceries',
+          description: 'Trader Joe\'s & Groceries',
+          amount: 140.00,
+          type: 'expense',
+          category: 'Groceries',
+          date: formatDateISO(new Date(y, m, 4)),
+          recurrence: 'weekly',
+          recurrenceEnd: ''
+        },
+        {
+          id: 'seed-streaming',
+          description: 'Streaming & Internet',
+          amount: 85.00,
+          type: 'expense',
+          category: 'Subscriptions',
+          date: formatDateISO(new Date(y, m, 12)),
+          recurrence: 'monthly',
+          recurrenceEnd: ''
+        },
+        {
+          id: 'seed-freelance',
+          description: 'Consulting Project',
+          amount: 650.00,
+          type: 'income',
+          category: 'Income',
+          date: formatDateISO(new Date(y, m, 18)),
+          recurrence: 'none',
+          recurrenceEnd: ''
+        }
+      ];
+      savePersistedData();
+    }
+
+    function calculateCashFlowProjections() {
+      // Build a 730-day (2-year) timeline starting from baselineDate
+      const baseDate = parseDateISO(state.baselineDate);
+      const timelineDays = 760;
+      const dailyMap = {};
+
+      for (let i = -30; i < timelineDays; i++) {
+        const d = new Date(baseDate);
+        d.setDate(d.getDate() + i);
+        const iso = formatDateISO(d);
+        dailyMap[iso] = {
+          dateStr: iso,
+          dateObj: d,
+          inflow: 0,
+          outflow: 0,
+          net: 0,
+          closingBalance: 0,
+          transactions: []
+        };
+      }
+
+      // Expand all recurring & one-time transactions across the map
+      state.transactions.forEach(tx => {
+        const txStart = parseDateISO(tx.date);
+        const txEnd = tx.recurrenceEnd ? parseDateISO(tx.recurrenceEnd) : null;
+        const amount = Number(tx.amount);
+
+        const checkAndAdd = (dateObj) => {
+          const iso = formatDateISO(dateObj);
+          if (dailyMap[iso]) {
+            if (tx.type === 'income') {
+              dailyMap[iso].inflow += amount;
+            } else {
+              dailyMap[iso].outflow += amount;
+            }
+            dailyMap[iso].transactions.push({ ...tx, instanceDate: iso });
+          }
+        };
+
+        if (tx.recurrence === 'none') {
+          checkAndAdd(txStart);
+        } else if (tx.recurrence === 'daily') {
+          let curr = new Date(txStart);
+          for (let step = 0; step < timelineDays; step++) {
+            if (txEnd && curr > txEnd) break;
+            checkAndAdd(curr);
+            curr.setDate(curr.getDate() + 1);
+          }
+        } else if (tx.recurrence === 'weekly') {
+          let curr = new Date(txStart);
+          for (let step = 0; step < 110; step++) {
+            if (txEnd && curr > txEnd) break;
+            checkAndAdd(curr);
+            curr.setDate(curr.getDate() + 7);
+          }
+        } else if (tx.recurrence === 'biweekly') {
+          let curr = new Date(txStart);
+          for (let step = 0; step < 60; step++) {
+            if (txEnd && curr > txEnd) break;
+            checkAndAdd(curr);
+            curr.setDate(curr.getDate() + 14);
+          }
+        } else if (tx.recurrence === 'monthly') {
+          let curr = new Date(txStart);
+          for (let step = 0; step < 26; step++) {
+            if (txEnd && curr > txEnd) break;
+            checkAndAdd(curr);
+            curr.setMonth(curr.getMonth() + 1);
+          }
+        }
+      });
+
+      // Calculate running daily cash balance
+      const sortedKeys = Object.keys(dailyMap).sort();
+      let running = state.baselineBalance;
+      let passedAnchor = false;
+
+      sortedKeys.forEach(iso => {
+        const item = dailyMap[iso];
+        item.net = item.inflow - item.outflow;
+
+        if (iso === state.baselineDate) {
+          running = state.baselineBalance + item.net;
+          passedAnchor = true;
+        } else if (passedAnchor) {
+          running += item.net;
+        }
+        item.closingBalance = running;
+      });
+
+      state.dailyCalculations = dailyMap;
+      updateHeaderLiveBalance();
+    }
+
+    function updateHeaderLiveBalance() {
+      const todayIso = formatDateISO(new Date());
+      const calc = state.dailyCalculations[todayIso];
+      const liveBalElem = document.getElementById('headerLiveBalance');
+      if (calc && liveBalElem) {
+        liveBalElem.textContent = formatCurrency(calc.closingBalance);
+        if (calc.closingBalance < 0) {
+          liveBalElem.className = 'text-xs sm:text-sm font-bold text-rose-400 leading-tight';
+        } else {
+          liveBalElem.className = 'text-xs sm:text-sm font-bold text-emerald-400 leading-tight';
+        }
+      }
+    }
+
+    function renderCalendar(animateDirection = null) {
+      const grid = document.getElementById('calendarGrid');
+      const titleElem = document.getElementById('calendarTitle');
+      if (!grid) return;
+
+      if (animateDirection) {
+        grid.classList.remove('slide-left', 'slide-right');
+        void grid.offsetWidth; // Force CSS reflow
+        grid.classList.add(animateDirection === 'left' ? 'slide-left' : 'slide-right');
+      }
+
+      grid.innerHTML = '';
+      const year = state.currentDate.getFullYear();
+      const month = state.currentDate.getMonth();
+
+      // Month name header
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      titleElem.textContent = `${monthNames[month]} ${year}`;
+
+      const firstDayOfMonth = new Date(year, month, 1);
+      const startingDayOfWeek = firstDayOfMonth.getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+      let monthInflow = 0;
+      let monthOutflow = 0;
+      const todayIso = formatDateISO(new Date());
+
+      // Preceding month trailing days
+      for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+        const dayNum = daysInPrevMonth - i;
+        const d = new Date(year, month - 1, dayNum);
+        const iso = formatDateISO(d);
+        const calc = state.dailyCalculations[iso] || { net: 0, closingBalance: 0, transactions: [] };
+        grid.appendChild(createCalendarCell(dayNum, iso, calc, true));
+      }
+
+      // Current month days
+      for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+        const d = new Date(year, month, dayNum);
+        const iso = formatDateISO(d);
+        const calc = state.dailyCalculations[iso] || { net: 0, closingBalance: 0, transactions: [] };
+        
+        monthInflow += calc.inflow;
+        monthOutflow += calc.outflow;
+        grid.appendChild(createCalendarCell(dayNum, iso, calc, false));
+      }
+
+      // Next month trailing days to complete full 7-col grid (up to 35 or 42 cells)
+      const totalRendered = startingDayOfWeek + daysInMonth;
+      const remaining = (totalRendered % 7 === 0) ? 0 : 7 - (totalRendered % 7);
+      for (let dayNum = 1; dayNum <= remaining; dayNum++) {
+        const d = new Date(year, month + 1, dayNum);
+        const iso = formatDateISO(d);
+        const calc = state.dailyCalculations[iso] || { net: 0, closingBalance: 0, transactions: [] };
+        grid.appendChild(createCalendarCell(dayNum, iso, calc, true));
+      }
+
+      // Update month totals banner
+      document.getElementById('monthInflowTotal').textContent = formatCurrency(monthInflow, true);
+      document.getElementById('monthOutflowTotal').textContent = formatCurrency(-monthOutflow);
+      const netMonth = monthInflow - monthOutflow;
+      const netElem = document.getElementById('monthNetTotal');
+      netElem.textContent = formatCurrency(netMonth, true);
+      netElem.className = `text-xs sm:text-sm font-bold ${netMonth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+    }
+
+    function createCalendarCell(dayNum, iso, calc, isOtherMonth) {
+      const cell = document.createElement('div');
+      const isToday = (iso === formatDateISO(new Date()));
+      const isSelected = (iso === state.selectedDayStr);
+      const isNegative = calc.closingBalance < 0;
+
+      let baseClasses = 'calendar-cell relative rounded-xl p-1.5 sm:p-2.5 flex flex-col justify-between cursor-pointer border no-tap-highlight select-none ';
+      
+      if (isOtherMonth) {
+        baseClasses += 'bg-slate-950/40 border-slate-900/60 text-slate-600 hover:border-slate-800 ';
+      } else {
+        baseClasses += 'bg-slate-900/90 border-slate-800/90 hover:border-indigo-500/70 ';
+      }
+
+      if (isToday) {
+        baseClasses += 'ring-2 ring-indigo-500 shadow-md shadow-indigo-500/20 ';
+      }
+      if (isSelected) {
+        baseClasses += 'bg-slate-800 border-indigo-400 ';
+      }
+
+      cell.className = baseClasses;
+
+      // Top row: Day Number + Daily Net Badge
+      const topRow = document.createElement('div');
+      topRow.className = 'flex items-center justify-between gap-1';
+
+      const numSpan = document.createElement('span');
+      numSpan.className = `text-xs sm:text-sm font-semibold ${isToday ? 'text-indigo-400 font-extrabold' : (isOtherMonth ? 'text-slate-600' : 'text-slate-300')}`;
+      numSpan.textContent = dayNum;
+      topRow.appendChild(numSpan);
+
+      if (calc.net !== 0) {
+        const netBadge = document.createElement('span');
+        const isNetPos = calc.net > 0;
+        netBadge.className = `text-[9px] sm:text-[10px] font-bold px-1 rounded ${isNetPos ? 'bg-emerald-500/15 text-emerald-300' : 'bg-rose-500/15 text-rose-300'}`;
+        netBadge.textContent = isNetPos ? `+${Math.round(calc.net)}` : `${Math.round(calc.net)}`;
+        topRow.appendChild(netBadge);
+      }
+      cell.appendChild(topRow);
+
+      // Middle: Transaction Pills / Dots
+      const midRow = document.createElement('div');
+      midRow.className = 'my-1 flex items-center gap-1 overflow-hidden min-h-[14px]';
+      if (calc.transactions.length > 0) {
+        calc.transactions.slice(0, 3).forEach(tx => {
+          const dot = document.createElement('span');
+          dot.className = `w-1.5 h-1.5 rounded-full ${tx.type === 'income' ? 'bg-emerald-400' : 'bg-rose-400'}`;
+          midRow.appendChild(dot);
+        });
+        if (calc.transactions.length > 3) {
+          const plus = document.createElement('span');
+          plus.className = 'text-[8px] text-slate-400 font-mono leading-none';
+          plus.textContent = `+${calc.transactions.length - 3}`;
+          midRow.appendChild(plus);
+        }
+      }
+      cell.appendChild(midRow);
+
+      // Bottom row: Projected Closing Cash Balance
+      const botRow = document.createElement('div');
+      botRow.className = 'text-right mt-auto';
+      const balSpan = document.createElement('span');
+      balSpan.className = `text-[10px] sm:text-xs font-bold truncate block ${isNegative ? 'text-red-400 font-extrabold' : (isOtherMonth ? 'text-slate-500' : 'text-slate-200')}`;
+      balSpan.textContent = formatCurrency(calc.closingBalance);
+      botRow.appendChild(balSpan);
+      cell.appendChild(botRow);
+
+      // Click to open drill-down drawer
+      cell.addEventListener('click', (e) => {
+        state.selectedDayStr = iso;
+        openDayDrawer(iso);
+        renderCalendar();
+      });
+
+      return cell;
+    }
+
+    function initCalendarTouchSwipe() {
+      const container = document.getElementById('calendarContainer');
+      if (!container) return;
+
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchStartTime = 0;
+      let touchCurrentX = 0;
+      let touchCurrentY = 0;
+      let isTracking = false;
+
+      container.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        touchCurrentX = touch.clientX;
+        touchCurrentY = touch.clientY;
+        touchStartTime = Date.now();
+        isTracking = true;
+      }, { passive: true });
+
+      container.addEventListener('touchmove', (e) => {
+        if (!isTracking || e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        touchCurrentX = touch.clientX;
+        touchCurrentY = touch.clientY;
+      }, { passive: true });
+
+      container.addEventListener('touchend', (e) => {
+        if (!isTracking) return;
+        isTracking = false;
+
+        const distX = touchCurrentX - touchStartX;
+        const distY = touchCurrentY - touchStartY;
+        const elapsed = Date.now() - touchStartTime;
+
+        const absDistX = Math.abs(distX);
+        const absDistY = Math.abs(distY);
+
+        // Smart gesture verification:
+        // Must travel at least 45px horizontally, horizontal distance must exceed vertical by 1.3x,
+        // and gesture completed within 700ms (to prevent accidental triggers during slow vertical page scrolls).
+        if (absDistX >= 45 && absDistX > absDistY * 1.3 && elapsed < 700) {
+          if (distX < 0) {
+            // Swipe Left (drag right-to-left) -> Advance to NEXT Month
+            navigateMonth(1, 'left');
+            showSwipeToast('Next Month →');
+          } else {
+            // Swipe Right (drag left-to-right) -> Back to PREVIOUS Month
+            navigateMonth(-1, 'right');
+            showSwipeToast('← Previous Month');
+          }
+        }
+      }, { passive: true });
+
+      container.addEventListener('touchcancel', () => {
+        isTracking = false;
+      });
+    }
+
+    function showSwipeToast(message) {
+      const toast = document.getElementById('swipeToast');
+      const content = document.getElementById('swipeToastContent');
+      if (!toast || !content) return;
+      content.textContent = message;
+      toast.classList.remove('opacity-0');
+      toast.classList.add('opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0');
+      }, 350);
+    }
+
+    function navigateMonth(offset, direction = null) {
+      state.currentDate.setMonth(state.currentDate.getMonth() + offset);
+      renderCalendar(direction || (offset > 0 ? 'left' : 'right'));
+    }
+
+    function openDayDrawer(iso) {
+      const drawer = document.getElementById('dayDrawer');
+      const backdrop = document.getElementById('drawerBackdrop');
+      const calc = state.dailyCalculations[iso] || { net: 0, closingBalance: 0, transactions: [] };
+      const dateObj = parseDateISO(iso);
+
+      document.getElementById('drawerDateTitle').textContent = dateObj.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+
+      const netElem = document.getElementById('drawerNetTotal');
+      netElem.textContent = formatCurrency(calc.net, true);
+      netElem.className = `text-sm font-bold mt-0.5 ${calc.net >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+      const closingElem = document.getElementById('drawerClosingBalance');
+      closingElem.textContent = formatCurrency(calc.closingBalance);
+      closingElem.className = `text-sm font-bold mt-0.5 ${calc.closingBalance < 0 ? 'text-rose-400' : 'text-white'}`;
+
+      const txList = document.getElementById('drawerTxList');
+      txList.innerHTML = '';
+
+      if (calc.transactions.length === 0) {
+        txList.innerHTML = `
+          <div class="text-center py-10 text-slate-500">
+            <svg class="w-8 h-8 mx-auto mb-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <p class="text-xs">No scheduled activity on this day.</p>
+          </div>
+        `;
+      } else {
+        calc.transactions.forEach(tx => {
+          const item = document.createElement('div');
+          item.className = 'bg-slate-950 border border-slate-800/90 rounded-xl p-3 flex items-center justify-between gap-3 hover:border-slate-700 transition cursor-pointer';
+          
+          const isIncome = tx.type === 'income';
+          item.innerHTML = `
+            <div class="min-w-0">
+              <div class="font-semibold text-white text-xs truncate">${tx.description}</div>
+              <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                <span class="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 font-medium">${tx.category}</span>
+                ${tx.recurrence !== 'none' ? `<span class="text-indigo-400">Repeats ${tx.recurrence}</span>` : ''}
+              </div>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <div class="text-xs font-bold ${isIncome ? 'text-emerald-400' : 'text-rose-400'}">
+                ${isIncome ? '+' : '-'}${formatCurrency(tx.amount)}
+              </div>
+            </div>
+          `;
+          item.addEventListener('click', () => openEditTxModal(tx.id));
+          txList.appendChild(item);
+        });
+      }
+
+      drawer.classList.remove('translate-x-full');
+      backdrop.classList.remove('hidden');
+    }
+
+    function closeDayDrawer() {
+      const drawer = document.getElementById('dayDrawer');
+      const backdrop = document.getElementById('drawerBackdrop');
+      drawer.classList.add('translate-x-full');
+      backdrop.classList.add('hidden');
+    }
+
+    function renderForecastChart() {
+      const svg = document.getElementById('forecastSvg');
+      const container = document.getElementById('chartCanvasWrapper');
+      if (!svg || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      const width = rect.width || 700;
+      const height = rect.height || 320;
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      // Gather points starting from today up to state.forecastDays
+      const today = new Date();
+      const points = [];
+      let minBal = Infinity;
+      let maxBal = -Infinity;
+      let lowestPoint = null;
+      let peakPoint = null;
+
+      for (let i = 0; i <= state.forecastDays; i++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() + i);
+        const iso = formatDateISO(d);
+        const calc = state.dailyCalculations[iso] || { closingBalance: state.baselineBalance, net: 0 };
+        const bal = calc.closingBalance;
+
+        points.push({
+          dayIndex: i,
+          dateStr: iso,
+          dateObj: d,
+          balance: bal,
+          net: calc.net
+        });
+
+        if (bal < minBal) {
+          minBal = bal;
+          lowestPoint = points[points.length - 1];
+        }
+        if (bal > maxBal) {
+          maxBal = bal;
+          peakPoint = points[points.length - 1];
+        }
+      }
+
+      const startingBal = points[0].balance;
+      const endingPoint = points[points.length - 1];
+      const endingBal = endingPoint.balance;
+      const netGrowth = endingBal - startingBal;
+      const netPct = startingBal !== 0 ? ((netGrowth / Math.abs(startingBal)) * 100).toFixed(1) : 0;
+
+      // Update Forecast KPI cards
+      document.getElementById('chartEndingBalance').textContent = formatCurrency(endingBal);
+      document.getElementById('chartEndingDate').textContent = endingPoint.dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+      const lowestElem = document.getElementById('chartLowestBalance');
+      lowestElem.textContent = formatCurrency(minBal);
+      lowestElem.className = `text-sm sm:text-lg font-bold mt-0.5 ${minBal < 0 ? 'text-rose-400' : 'text-emerald-400'}`;
+      document.getElementById('chartLowestDate').textContent = lowestPoint ? lowestPoint.dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-';
+
+      document.getElementById('chartPeakBalance').textContent = formatCurrency(maxBal);
+      document.getElementById('chartPeakDate').textContent = peakPoint ? peakPoint.dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-';
+
+      const netGrowthElem = document.getElementById('chartNetChange');
+      netGrowthElem.textContent = formatCurrency(netGrowth, true);
+      netGrowthElem.className = `text-sm sm:text-lg font-bold mt-0.5 ${netGrowth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+      document.getElementById('chartNetPercent').textContent = `${netPct >= 0 ? '+' : ''}${netPct}% over ${state.forecastDays} days`;
+
+      // Geometry and padding calculations for SVG plotting
+      const padLeft = 10;
+      const padRight = 10;
+      const padTop = 20;
+      const padBottom = 30;
+      const plotW = width - padLeft - padRight;
+      const plotH = height - padTop - padBottom;
+
+      const chartMin = Math.min(minBal, 0); // Always encompass $0 line
+      const chartMax = Math.max(maxBal, 100);
+      const span = (chartMax - chartMin) || 1;
+
+      const getX = (index) => padLeft + (index / (points.length - 1)) * plotW;
+      const getY = (bal) => padTop + plotH - ((bal - chartMin) / span) * plotH;
+
+      // Clear existing paths (preserving defs)
+      const defs = svg.querySelector('defs');
+      svg.innerHTML = '';
+      if (defs) svg.appendChild(defs);
+
+      // Horizontal $0 Break-Even Reference Line
+      const zeroY = getY(0);
+      if (zeroY >= padTop && zeroY <= padTop + plotH) {
+        const zeroLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        zeroLine.setAttribute('x1', padLeft);
+        zeroLine.setAttribute('x2', width - padRight);
+        zeroLine.setAttribute('y1', zeroY);
+        zeroLine.setAttribute('y2', zeroY);
+        zeroLine.setAttribute('stroke', '#ef4444');
+        zeroLine.setAttribute('stroke-width', '1.2');
+        zeroLine.setAttribute('stroke-dasharray', '4 4');
+        zeroLine.setAttribute('opacity', '0.7');
+        svg.appendChild(zeroLine);
+      }
+
+      // Build smooth path
+      let dLine = `M ${getX(0)} ${getY(points[0].balance)}`;
+      for (let i = 1; i < points.length; i++) {
+        dLine += ` L ${getX(i)} ${getY(points[i].balance)}`;
+      }
+
+      // Gradient Area fill path
+      const dArea = `${dLine} L ${getX(points.length - 1)} ${padTop + plotH} L ${getX(0)} ${padTop + plotH} Z`;
+      const areaPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      areaPath.setAttribute('d', dArea);
+      areaPath.setAttribute('fill', 'url(#chartGradient)');
+      svg.appendChild(areaPath);
+
+      // Line Path
+      const linePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      linePath.setAttribute('d', dLine);
+      linePath.setAttribute('fill', 'none');
+      linePath.setAttribute('stroke', '#6366f1');
+      linePath.setAttribute('stroke-width', '2.5');
+      linePath.setAttribute('stroke-linecap', 'round');
+      linePath.setAttribute('stroke-linejoin', 'round');
+      svg.appendChild(linePath);
+
+      // Scrubber Cursor & Dot
+      const cursorLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      cursorLine.setAttribute('stroke', '#cbd5e1');
+      cursorLine.setAttribute('stroke-width', '1');
+      cursorLine.setAttribute('stroke-dasharray', '3 3');
+      cursorLine.setAttribute('style', 'display: none;');
+      svg.appendChild(cursorLine);
+
+      const cursorDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      cursorDot.setAttribute('r', '5');
+      cursorDot.setAttribute('fill', '#6366f1');
+      cursorDot.setAttribute('stroke', '#ffffff');
+      cursorDot.setAttribute('stroke-width', '2');
+      cursorDot.setAttribute('style', 'display: none;');
+      svg.appendChild(cursorDot);
+
+      // Scrubber interaction handlers
+      const tooltip = document.getElementById('chartTooltip');
+      const updateScrubber = (clientX) => {
+        const b = container.getBoundingClientRect();
+        const offsetX = Math.max(0, Math.min(clientX - b.left - padLeft, plotW));
+        const index = Math.round((offsetX / plotW) * (points.length - 1));
+        const pt = points[index];
+        if (!pt) return;
+
+        const cx = getX(index);
+        const cy = getY(pt.balance);
+
+        cursorLine.setAttribute('x1', cx);
+        cursorLine.setAttribute('x2', cx);
+        cursorLine.setAttribute('y1', padTop);
+        cursorLine.setAttribute('y2', padTop + plotH);
+        cursorLine.style.display = 'block';
+
+        cursorDot.setAttribute('cx', cx);
+        cursorDot.setAttribute('cy', cy);
+        cursorDot.style.display = 'block';
+
+        tooltip.style.display = 'block';
+        tooltip.style.left = `${Math.min(Math.max(cx - 60, 10), width - 150)}px`;
+        tooltip.style.top = `${Math.max(cy - 70, 10)}px`;
+
+        document.getElementById('chartTooltipDate').textContent = pt.dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        document.getElementById('chartTooltipBalance').textContent = formatCurrency(pt.balance);
+        document.getElementById('chartTooltipActivity').textContent = `Activity: ${formatCurrency(pt.net, true)}`;
+      };
+
+      container.onmousemove = (e) => updateScrubber(e.clientX);
+      container.onmouseleave = () => {
+        cursorLine.style.display = 'none';
+        cursorDot.style.display = 'none';
+        tooltip.style.display = 'none';
+      };
+
+      container.ontouchmove = (e) => {
+        if (e.touches.length > 0) updateScrubber(e.touches[0].clientX);
+      };
+      container.ontouchend = () => {
+        cursorLine.style.display = 'none';
+        cursorDot.style.display = 'none';
+        tooltip.style.display = 'none';
+      };
+    }
+
+    function openAddTxModal(initialDate = null) {
+      document.getElementById('txModalTitle').textContent = 'Add Transaction';
+      document.getElementById('txId').value = '';
+      document.getElementById('txDescription').value = '';
+      document.getElementById('txAmount').value = '';
+      document.getElementById('txDate').value = initialDate || state.selectedDayStr || formatDateISO(new Date());
+      document.getElementById('txCategory').value = 'General';
+      document.getElementById('txRecurrence').value = 'none';
+      document.getElementById('txRecurrenceEnd').value = '';
+      document.getElementById('recurrenceEndContainer').classList.add('hidden');
+      document.getElementById('deleteTxBtn').classList.add('hidden');
+      setTxType('expense');
+
+      document.getElementById('txModal').classList.remove('hidden');
+    }
+
+    function openEditTxModal(txId) {
+      const tx = state.transactions.find(t => t.id === txId);
+      if (!tx) return;
+
+      document.getElementById('txModalTitle').textContent = 'Edit Transaction';
+      document.getElementById('txId').value = tx.id;
+      document.getElementById('txDescription').value = tx.description;
+      document.getElementById('txAmount').value = tx.amount;
+      document.getElementById('txDate').value = tx.date;
+      document.getElementById('txCategory').value = tx.category || 'General';
+      document.getElementById('txRecurrence').value = tx.recurrence || 'none';
+      document.getElementById('txRecurrenceEnd').value = tx.recurrenceEnd || '';
+      
+      if (tx.recurrence !== 'none') {
+        document.getElementById('recurrenceEndContainer').classList.remove('hidden');
+      } else {
+        document.getElementById('recurrenceEndContainer').classList.add('hidden');
+      }
+
+      setTxType(tx.type);
+      document.getElementById('deleteTxBtn').classList.remove('hidden');
+      document.getElementById('txModal').classList.remove('hidden');
+    }
+
+    function closeTxModal() {
+      document.getElementById('txModal').classList.add('hidden');
+    }
+
+    let currentTxType = 'expense';
+    function setTxType(type) {
+      currentTxType = type;
+      const expBtn = document.getElementById('txTypeExpense');
+      const incBtn = document.getElementById('txTypeIncome');
+      if (type === 'expense') {
+        expBtn.className = 'py-2 rounded-lg font-semibold bg-rose-600 text-white transition';
+        incBtn.className = 'py-2 rounded-lg font-semibold text-slate-400 hover:text-white transition';
+      } else {
+        incBtn.className = 'py-2 rounded-lg font-semibold bg-emerald-600 text-white transition';
+        expBtn.className = 'py-2 rounded-lg font-semibold text-slate-400 hover:text-white transition';
+      }
+    }
+
+    function openReconcileModal(targetDate = null) {
+      const dateToUse = targetDate || state.selectedDayStr || formatDateISO(new Date());
+      document.getElementById('reconcileDate').value = dateToUse;
+
+      const calc = state.dailyCalculations[dateToUse];
+      if (calc) {
+        document.getElementById('reconcileAmount').value = calc.closingBalance.toFixed(2);
+      } else {
+        document.getElementById('reconcileAmount').value = state.baselineBalance.toFixed(2);
+      }
+      document.getElementById('reconcileModal').classList.remove('hidden');
+    }
+
+    function closeReconcileModal() {
+      document.getElementById('reconcileModal').classList.add('hidden');
+    }
+
+    function applyReconciliation() {
+      const dateVal = document.getElementById('reconcileDate').value;
+      const amountVal = parseFloat(document.getElementById('reconcileAmount').value);
+      if (isNaN(amountVal)) return;
+
+      const method = document.querySelector('input[name="reconcileMethod"]:checked').value;
+
+      if (method === 'anchor') {
+        state.baselineBalance = amountVal;
+        state.baselineDate = dateVal;
+      } else {
+        // Create an adjusting transaction for the variance
+        const calc = state.dailyCalculations[dateVal] || { closingBalance: 0 };
+        const diff = amountVal - calc.closingBalance;
+        if (Math.abs(diff) > 0.009) {
+          state.transactions.push({
+            id: 'adj-' + Date.now(),
+            description: 'Balance Calibration Entry',
+            amount: Math.abs(diff),
+            type: diff > 0 ? 'income' : 'expense',
+            category: 'Savings',
+            date: dateVal,
+            recurrence: 'none',
+            recurrenceEnd: ''
+          });
+        }
+      }
+
+      savePersistedData();
+      calculateCashFlowProjections();
+      renderCalendar();
+      if (state.activeTab === 'forecast') renderForecastChart();
+      closeReconcileModal();
+      openDayDrawer(dateVal);
+    }
+
+    function exportDataJson() {
+      const exportObject = {
+        app: 'Dollarbird PWA',
+        version: '2.0.0',
+        exportedAt: new Date().toISOString(),
+        settings: {
+          baselineBalance: state.baselineBalance,
+          baselineDate: state.baselineDate,
+          forecastDays: state.forecastDays
+        },
+        transactions: state.transactions
+      };
+
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportObject, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', dataStr);
+      downloadAnchor.setAttribute('download', `dollarbird-backup-${formatDateISO(new Date())}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importDataJson(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (parsed.transactions && Array.isArray(parsed.transactions)) {
+            state.transactions = parsed.transactions;
+            if (parsed.settings) {
+              if (parsed.settings.baselineBalance !== undefined) state.baselineBalance = Number(parsed.settings.baselineBalance);
+              if (parsed.settings.baselineDate) state.baselineDate = parsed.settings.baselineDate;
+              if (parsed.settings.forecastDays) state.forecastDays = Number(parsed.settings.forecastDays);
+            }
+            savePersistedData();
+            calculateCashFlowProjections();
+            renderCalendar();
+            if (state.activeTab === 'forecast') renderForecastChart();
+            document.getElementById('dataModal').classList.add('hidden');
+          }
+        } catch (err) {
+          console.error('Failed to import JSON file:', err);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadPersistedData();
+      calculateCashFlowProjections();
+      renderCalendar();
+      initCalendarTouchSwipe();
+
+      // Navigation: Month forward/back & jump to Today
+      document.getElementById('prevPeriodBtn').addEventListener('click', () => navigateMonth(-1, 'right'));
+      document.getElementById('nextPeriodBtn').addEventListener('click', () => navigateMonth(1, 'left'));
+      document.getElementById('todayJumpBtn').addEventListener('click', () => {
+        state.currentDate = new Date();
+        state.selectedDayStr = formatDateISO(new Date());
+        renderCalendar();
+      });
+
+      // View Tab Switching (Calendar vs Forecast)
+      const tabCal = document.getElementById('tabCalendarBtn');
+      const tabFcast = document.getElementById('tabForecastBtn');
+      const secCal = document.getElementById('calendarSection');
+      const secFcast = document.getElementById('forecastSection');
+      const calControls = document.getElementById('calendarControls');
+
+      tabCal.addEventListener('click', () => {
+        state.activeTab = 'calendar';
+        tabCal.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow transition';
+        tabFcast.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition';
+        secCal.classList.remove('hidden');
+        secFcast.classList.add('hidden');
+        calControls.classList.remove('hidden');
+      });
+
+      tabFcast.addEventListener('click', () => {
+        state.activeTab = 'forecast';
+        tabFcast.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow transition';
+        tabCal.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition';
+        secCal.classList.add('hidden');
+        secFcast.classList.remove('hidden');
+        calControls.classList.add('hidden');
+        renderForecastChart();
+      });
+
+      // Forecast Timeframe Selector Buttons (30d, 1y, 2y)
+      document.querySelectorAll('.tf-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tf-btn').forEach(b => {
+            b.className = 'tf-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition';
+          });
+          btn.className = 'tf-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow transition';
+          state.forecastDays = parseInt(btn.dataset.days, 10);
+          savePersistedData();
+          renderForecastChart();
+        });
+      });
+
+      // Drawer interactions
+      document.getElementById('closeDrawerBtn').addEventListener('click', closeDayDrawer);
+      document.getElementById('drawerBackdrop').addEventListener('click', closeDayDrawer);
+      document.getElementById('drawerAddTxBtn').addEventListener('click', () => openAddTxModal(state.selectedDayStr));
+      document.getElementById('drawerReconcileBtn').addEventListener('click', () => openReconcileModal(state.selectedDayStr));
+      document.getElementById('quickAddBtn').addEventListener('click', () => openAddTxModal());
+      document.getElementById('reconcileHeaderBtn').addEventListener('click', () => openReconcileModal());
+
+      // Transaction Modal controls
+      document.getElementById('closeTxModalBtn').addEventListener('click', closeTxModal);
+      document.getElementById('cancelTxBtn').addEventListener('click', closeTxModal);
+      document.getElementById('txModalBackdrop').addEventListener('click', closeTxModal);
+      document.getElementById('txTypeExpense').addEventListener('click', () => setTxType('expense'));
+      document.getElementById('txTypeIncome').addEventListener('click', () => setTxType('income'));
+      document.getElementById('txRecurrence').addEventListener('change', (e) => {
+        if (e.target.value !== 'none') {
+          document.getElementById('recurrenceEndContainer').classList.remove('hidden');
+        } else {
+          document.getElementById('recurrenceEndContainer').classList.add('hidden');
+        }
+      });
+
+      // Transaction Form Submit
+      document.getElementById('txForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('txId').value || ('tx-' + Date.now());
+        const desc = document.getElementById('txDescription').value.trim();
+        const amt = parseFloat(document.getElementById('txAmount').value);
+        const dateVal = document.getElementById('txDate').value;
+        const cat = document.getElementById('txCategory').value;
+        const recur = document.getElementById('txRecurrence').value;
+        const recurEnd = document.getElementById('txRecurrenceEnd').value;
+
+        const newTx = {
+          id,
+          description: desc,
+          amount: amt,
+          type: currentTxType,
+          category: cat,
+          date: dateVal,
+          recurrence: recur,
+          recurrenceEnd: recurEnd
+        };
+
+        const existingIdx = state.transactions.findIndex(t => t.id === id);
+        if (existingIdx >= 0) {
+          state.transactions[existingIdx] = newTx;
+        } else {
+          state.transactions.push(newTx);
+        }
+
+        savePersistedData();
+        calculateCashFlowProjections();
+        renderCalendar();
+        if (state.activeTab === 'forecast') renderForecastChart();
+        closeTxModal();
+        if (state.selectedDayStr) openDayDrawer(state.selectedDayStr);
+      });
+
+      // Delete Transaction
+      document.getElementById('deleteTxBtn').addEventListener('click', () => {
+        const id = document.getElementById('txId').value;
+        if (!id) return;
+        state.transactions = state.transactions.filter(t => t.id !== id);
+        savePersistedData();
+        calculateCashFlowProjections();
+        renderCalendar();
+        if (state.activeTab === 'forecast') renderForecastChart();
+        closeTxModal();
+        if (state.selectedDayStr) openDayDrawer(state.selectedDayStr);
+      });
+
+      // Reconcile Modal controls
+      document.getElementById('closeReconcileBtn').addEventListener('click', closeReconcileModal);
+      document.getElementById('cancelReconcileBtn').addEventListener('click', closeReconcileModal);
+      document.getElementById('reconcileBackdrop').addEventListener('click', closeReconcileModal);
+      document.getElementById('reconcileSetTodayBtn').addEventListener('click', () => {
+        document.getElementById('reconcileDate').value = formatDateISO(new Date());
+      });
+      document.getElementById('confirmReconcileBtn').addEventListener('click', applyReconciliation);
+
+      // Data Modal & Backup controls
+      const dataModal = document.getElementById('dataModal');
+      document.getElementById('openDataModalBtn').addEventListener('click', () => dataModal.classList.remove('hidden'));
+      document.getElementById('closeDataModalCloseBtn').addEventListener('click', () => dataModal.classList.add('hidden'));
+      document.getElementById('dataModalBackdrop').addEventListener('click', () => dataModal.classList.add('hidden'));
+      document.getElementById('exportJsonBtn').addEventListener('click', exportDataJson);
+      document.getElementById('importJsonInput').addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) importDataJson(e.target.files[0]);
+      });
+      document.getElementById('loadDemoDataBtn').addEventListener('click', () => {
+        populateDefaultSeedData();
+        calculateCashFlowProjections();
+        renderCalendar();
+        if (state.activeTab === 'forecast') renderForecastChart();
+        dataModal.classList.add('hidden');
+      });
+      document.getElementById('clearAllDataBtn').addEventListener('click', () => {
+        state.transactions = [];
+        state.baselineBalance = 0;
+        savePersistedData();
+        calculateCashFlowProjections();
+        renderCalendar();
+        if (state.activeTab === 'forecast') renderForecastChart();
+        dataModal.classList.add('hidden');
+      });
+
+      // Window resize listener to recompute chart dimensions
+      window.addEventListener('resize', () => {
+        if (state.activeTab === 'forecast') renderForecastChart();
+      });
+
+      // PWA BeforeInstallPrompt support
+      let deferredPrompt = null;
+      const installBtn = document.getElementById('installAppBtn');
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (installBtn) installBtn.classList.remove('hidden');
+      });
+      if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+              installBtn.classList.add('hidden');
+            }
+            deferredPrompt = null;
+          }
+        });
+      }
+
+      // Register PWA Service Worker for offline launch
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(err => {
+          console.log('SW registration note:', err);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
