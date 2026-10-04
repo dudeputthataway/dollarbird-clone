@@ -210,7 +210,7 @@
 
     <section id="calendarSection" class="flex flex-col gap-3">
       
-      <!-- Calendar Title & Month Summary Strip -->
+      <!-- Calendar Title & Month Selector Banner -->
       <div class="flex items-center justify-between bg-slate-900/60 border border-slate-800/80 rounded-2xl px-3.5 py-2.5">
         <div>
           <h2 id="calendarTitle" class="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
@@ -224,20 +224,66 @@
           </div>
         </div>
 
-        <!-- Month Activity Summary -->
-        <div class="flex items-center gap-2 sm:gap-4 text-right">
-          <div>
-            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-medium">Inflows</div>
-            <div id="monthInflowTotal" class="text-xs sm:text-sm font-semibold text-emerald-400">+$0.00</div>
+        <!-- Month Navigation Quick Indicator -->
+        <div class="text-right">
+          <span class="text-[9px] uppercase tracking-wider text-slate-400 font-medium">Monthly Analysis</span>
+          <div id="monthQuickSummary" class="text-xs sm:text-sm font-semibold text-slate-300">Cash Flow Overview</div>
+        </div>
+      </div>
+
+      <!-- Monthly Financial Metrics Dashboard Cards (Start, Inflow, Outflow, Net Cash Flow, End) -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
+        <!-- 1. Month Start -->
+        <div class="bg-slate-900 border border-slate-800/90 rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between shadow-sm">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-[10px] uppercase font-bold tracking-wider">Month Start</span>
+            <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
           </div>
-          <div>
-            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-medium">Outflows</div>
-            <div id="monthOutflowTotal" class="text-xs sm:text-sm font-semibold text-rose-400">-$0.00</div>
+          <div id="metricMonthStart" class="text-base sm:text-lg font-bold text-white tracking-tight">$0.00</div>
+          <div class="text-[10px] text-slate-400 mt-0.5 truncate">Opening Balance</div>
+        </div>
+
+        <!-- 2. Inflow -->
+        <div class="bg-slate-900 border border-slate-800/90 rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between shadow-sm">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-[10px] uppercase font-bold tracking-wider">Inflow</span>
+            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
           </div>
-          <div class="border-l border-slate-800 pl-2 sm:pl-3">
-            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-medium">Net Diff</div>
-            <div id="monthNetTotal" class="text-xs sm:text-sm font-bold text-slate-200">$0.00</div>
+          <div id="metricMonthInflow" class="text-base sm:text-lg font-bold text-emerald-400 tracking-tight">+$0.00</div>
+          <div class="text-[10px] text-slate-400 mt-0.5 truncate">Total Income</div>
+        </div>
+
+        <!-- 3. Outflow -->
+        <div class="bg-slate-900 border border-slate-800/90 rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between shadow-sm">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-[10px] uppercase font-bold tracking-wider">Outflow</span>
+            <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
           </div>
+          <div id="metricMonthOutflow" class="text-base sm:text-lg font-bold text-rose-400 tracking-tight">-$0.00</div>
+          <div class="text-[10px] text-slate-400 mt-0.5 truncate">Total Expenses</div>
+        </div>
+
+        <!-- 4. CALCULATED NET CASH FLOW (INCOME MINUS EXPENSES) -->
+        <div id="metricNetContainer" class="col-span-2 sm:col-span-1 bg-slate-900/95 border border-indigo-500/40 rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between shadow-md relative overflow-hidden transition-all duration-200">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-300">Net Cash Flow</span>
+            <span id="metricNetBadge" class="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-emerald-500/20 text-emerald-300 border-emerald-500/30">Surplus</span>
+          </div>
+          <div id="metricMonthNet" class="text-base sm:text-lg font-extrabold tracking-tight text-emerald-400">$0.00</div>
+          <div class="text-[10px] text-slate-400 mt-0.5 flex items-center justify-between">
+            <span>Income − Expenses</span>
+            <span id="metricNetSub" class="text-emerald-400 font-semibold text-[10px]">Net Gain</span>
+          </div>
+        </div>
+
+        <!-- 5. Month End Balance -->
+        <div class="col-span-2 sm:col-span-2 lg:col-span-1 bg-slate-900 border border-slate-800/90 rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between shadow-sm">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-[10px] uppercase font-bold tracking-wider">Month End</span>
+            <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+          </div>
+          <div id="metricMonthEnd" class="text-base sm:text-lg font-bold text-white tracking-tight">$0.00</div>
+          <div id="metricMonthEndSub" class="text-[10px] text-slate-400 mt-0.5 truncate">Projected Close</div>
         </div>
       </div>
 
@@ -898,13 +944,104 @@
         grid.appendChild(createCalendarCell(dayNum, iso, calc, true));
       }
 
-      // Update month totals banner
-      document.getElementById('monthInflowTotal').textContent = formatCurrency(monthInflow, true);
-      document.getElementById('monthOutflowTotal').textContent = formatCurrency(-monthOutflow);
+      // 1. Calculate Month Opening Starting Balance (Closing cash of preceding day)
+      const prevDayObj = new Date(year, month, 0);
+      const prevDayIso = formatDateISO(prevDayObj);
+      const prevDayCalc = state.dailyCalculations[prevDayIso];
+      const firstDayIso = formatDateISO(firstDayOfMonth);
+      const firstDayCalc = state.dailyCalculations[firstDayIso];
+
+      let monthStartBal = state.baselineBalance;
+      if (prevDayCalc) {
+        monthStartBal = prevDayCalc.closingBalance;
+      } else if (firstDayCalc) {
+        monthStartBal = firstDayCalc.closingBalance - firstDayCalc.net;
+      }
+
+      // 2. Calculate Month End Closing Balance
+      const lastDayObj = new Date(year, month, daysInMonth);
+      const lastDayIso = formatDateISO(lastDayObj);
+      const lastDayCalc = state.dailyCalculations[lastDayIso];
       const netMonth = monthInflow - monthOutflow;
-      const netElem = document.getElementById('monthNetTotal');
-      netElem.textContent = formatCurrency(netMonth, true);
-      netElem.className = `text-xs sm:text-sm font-bold ${netMonth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+      const monthEndBal = lastDayCalc ? lastDayCalc.closingBalance : (monthStartBal + netMonth);
+
+      // 3. Update Month Start Card
+      const startElem = document.getElementById('metricMonthStart');
+      if (startElem) {
+        startElem.textContent = formatCurrency(monthStartBal);
+        startElem.className = `text-base sm:text-lg font-bold tracking-tight ${monthStartBal < 0 ? 'text-rose-400' : 'text-white'}`;
+      }
+
+      // 4. Update Inflow & Outflow Cards
+      const inflowCard = document.getElementById('metricMonthInflow');
+      if (inflowCard) inflowCard.textContent = formatCurrency(monthInflow, true);
+
+      const outflowCard = document.getElementById('metricMonthOutflow');
+      if (outflowCard) outflowCard.textContent = formatCurrency(-monthOutflow);
+
+      // 5. Update Calculated Net Cash Flow Card (Inflow - Outflow) with dynamic color-coding & badges
+      const netCardElem = document.getElementById('metricMonthNet');
+      const netBadgeElem = document.getElementById('metricNetBadge');
+      const netSubElem = document.getElementById('metricNetSub');
+      const netContainerElem = document.getElementById('metricNetContainer');
+
+      if (netCardElem && netBadgeElem) {
+        netCardElem.textContent = formatCurrency(netMonth, true);
+
+        if (netMonth > 0) {
+          netCardElem.className = 'text-base sm:text-lg font-extrabold tracking-tight text-emerald-400';
+          netBadgeElem.textContent = 'Surplus';
+          netBadgeElem.className = 'text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+          if (netSubElem) {
+            netSubElem.textContent = 'Net Gain';
+            netSubElem.className = 'text-emerald-400 font-semibold text-[10px]';
+          }
+          if (netContainerElem) {
+            netContainerElem.className = 'col-span-2 sm:col-span-1 bg-slate-900/95 border border-emerald-500/30 rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between shadow-sm relative overflow-hidden transition-all duration-200';
+          }
+        } else if (netMonth < 0) {
+          netCardElem.className = 'text-base sm:text-lg font-extrabold tracking-tight text-rose-400';
+          netBadgeElem.textContent = 'Deficit';
+          netBadgeElem.className = 'text-[9px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30';
+          if (netSubElem) {
+            netSubElem.textContent = 'Net Burn';
+            netSubElem.className = 'text-rose-400 font-semibold text-[10px]';
+          }
+          if (netContainerElem) {
+            netContainerElem.className = 'col-span-2 sm:col-span-1 bg-slate-900/95 border border-rose-500/30 rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between shadow-sm relative overflow-hidden transition-all duration-200';
+          }
+        } else {
+          netCardElem.className = 'text-base sm:text-lg font-extrabold tracking-tight text-slate-300';
+          netBadgeElem.textContent = 'Balanced';
+          netBadgeElem.className = 'text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700';
+          if (netSubElem) {
+            netSubElem.textContent = 'Break-Even';
+            netSubElem.className = 'text-slate-400 font-medium text-[10px]';
+          }
+          if (netContainerElem) {
+            netContainerElem.className = 'col-span-2 sm:col-span-1 bg-slate-900/95 border border-slate-800/90 rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between shadow-sm relative overflow-hidden transition-all duration-200';
+          }
+        }
+      }
+
+      // 6. Update Month End Projected Card
+      const endElem = document.getElementById('metricMonthEnd');
+      const endSubElem = document.getElementById('metricMonthEndSub');
+      if (endElem) {
+        endElem.textContent = formatCurrency(monthEndBal);
+        endElem.className = `text-base sm:text-lg font-bold tracking-tight ${monthEndBal < 0 ? 'text-rose-400' : 'text-white'}`;
+        if (endSubElem) {
+          endSubElem.textContent = monthEndBal < 0 ? 'Deficit Risk' : 'Projected Close';
+          endSubElem.className = `text-[10px] mt-0.5 truncate ${monthEndBal < 0 ? 'text-rose-400 font-semibold' : 'text-slate-400'}`;
+        }
+      }
+
+      // 7. Update quick header summary
+      const quickSummaryElem = document.getElementById('monthQuickSummary');
+      if (quickSummaryElem) {
+        quickSummaryElem.textContent = netMonth >= 0 ? `+${formatCurrency(netMonth)} Net` : `${formatCurrency(netMonth)} Net`;
+        quickSummaryElem.className = `text-xs sm:text-sm font-semibold ${netMonth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+      }
     }
 
     function createCalendarCell(dayNum, iso, calc, isOtherMonth) {
